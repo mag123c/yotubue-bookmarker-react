@@ -51,8 +51,15 @@ function App() {
         } else {
           console.warn("🚨 유저 정보 없음");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("❌ 유저 정보 불러오기 실패:", error);
+
+        // ❌ 로그인 에러 발생 시 RN에 메시지 전송
+        if (window.ReactNativeWebView?.postMessage) {
+          window.ReactNativeWebView.postMessage(
+            `로그인 오류: ${error.message}`
+          );
+        }
       }
     };
 
