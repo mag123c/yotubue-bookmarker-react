@@ -40,12 +40,15 @@ function App() {
     if (window.ReactNativeWebView?.postMessage) {
       window.ReactNativeWebView.postMessage("디바이스 ID 요청 중...");
     }
-    const handleDeviceIdMessage = async (event: MessageEvent) => {
+
+    // ✅ `onMessage` 방식 추가 (웹뷰 내부에서 React Native로부터 메시지를 수신할 때 사용)
+    document.addEventListener("message", async (event: any) => {
       const deviceId = event.data;
-      if (window.ReactNativeWebView?.postMessage) {
-        window.ReactNativeWebView.postMessage(
-          `디바이스 ID 수신 완료: ${deviceId}`
-        );
+      console.log("📢 웹뷰에서 수신한 디바이스 ID:", deviceId);
+
+      if (!deviceId) {
+        console.warn("🚨 수신된 디바이스 ID가 없음");
+        return;
       }
 
       localStorage.setItem("device_id", deviceId);
@@ -62,19 +65,16 @@ function App() {
       } catch (error: any) {
         console.error("❌ 유저 정보 불러오기 실패:", error);
 
-        // ❌ 로그인 에러 발생 시 RN에 메시지 전송
         if (window.ReactNativeWebView?.postMessage) {
           window.ReactNativeWebView.postMessage(
             `로그인 오류: ${error.message}`
           );
         }
       }
-    };
-
-    window.addEventListener("message", handleDeviceIdMessage);
+    });
 
     return () => {
-      window.removeEventListener("message", handleDeviceIdMessage);
+      document.removeEventListener("message", () => {});
     };
   }, []);
 
