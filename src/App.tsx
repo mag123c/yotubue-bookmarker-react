@@ -37,44 +37,57 @@ const globalStyles = (
 
 function App() {
   useEffect(() => {
+    // 웹뷰에 디바이스 ID 요청
     if (window.ReactNativeWebView?.postMessage) {
-      window.ReactNativeWebView.postMessage("디바이스 ID 요청 중...");
+      window.ReactNativeWebView.postMessage("READY_FOR_DEVICE_ID");
     }
 
-    // ✅ `onMessage` 방식 추가 (웹뷰 내부에서 React Native로부터 메시지를 수신할 때 사용)
-    document.addEventListener("message", async (event: any) => {
-      const deviceId = event.data;
-      console.log("📢 웹뷰에서 수신한 디바이스 ID:", deviceId);
-
-      if (!deviceId) {
-        console.warn("🚨 수신된 디바이스 ID가 없음");
-        return;
-      }
-
-      localStorage.setItem("device_id", deviceId);
-
+    // 메시지 수신을 위한 이벤트 리스너
+    const handleMessage = async (event: MessageEvent) => {
       try {
-        const user = await fetchUserInfo(deviceId);
+        const data = JSON.parse(event.data);
 
-        if (user) {
-          localStorage.setItem("links_user", JSON.stringify(user));
-          console.log("✅ 유저 정보 저장 완료:", user);
-        } else {
-          console.warn("🚨 유저 정보 없음");
-        }
-      } catch (error: any) {
-        console.error("❌ 유저 정보 불러오기 실패:", error);
+        if (data.type === "DEVICE_ID") {
+          const deviceId = data.payload;
+          console.log("📢 웹뷰에서 수신한 디바이스 ID:", deviceId);
 
-        if (window.ReactNativeWebView?.postMessage) {
-          window.ReactNativeWebView.postMessage(
-            `로그인 오류: ${error.message}`
-          );
+          if (!deviceId) {
+            console.warn("🚨 수신된 디바이스 ID가 없음");
+            return;
+          }
+
+          localStorage.setItem("device_id", deviceId);
+
+          try {
+            const user = await fetchUserInfo(deviceId);
+            if (user) {
+              localStorage.setItem("links_user", JSON.stringify(user));
+              console.log("✅ 유저 정보 저장 완료:", user);
+            } else {
+              console.warn("🚨 유저 정보 없음");
+            }
+          } catch (error: any) {
+            console.error("❌ 유저 정보 불러오기 실패:", error);
+            window.ReactNativeWebView?.postMessage(
+              JSON.stringify({
+                type: "ERROR",
+                payload: `로그인 오류: ${error.message}`,
+              })
+            );
+          }
         }
+      } catch (error) {
+        console.error("메시지 파싱 실패:", error);
       }
-    });
+    };
+
+    // 두 가지 이벤트 리스너 등록
+    window.addEventListener("message", handleMessage);
+    document.addEventListener("message", handleMessage as any);
 
     return () => {
-      document.removeEventListener("message", () => {});
+      window.removeEventListener("message", handleMessage);
+      document.removeEventListener("message", handleMessage as any);
     };
   }, []);
 
