@@ -37,8 +37,16 @@ const globalStyles = (
 
 function App() {
   useEffect(() => {
+    if (window.ReactNativeWebView?.postMessage) {
+      window.ReactNativeWebView.postMessage("디바이스 ID 요청 중...");
+    }
     const handleDeviceIdMessage = async (event: MessageEvent) => {
       const deviceId = event.data;
+      if (window.ReactNativeWebView?.postMessage) {
+        window.ReactNativeWebView.postMessage(
+          `디바이스 ID 수신 완료: ${deviceId}`
+        );
+      }
 
       localStorage.setItem("device_id", deviceId);
 
