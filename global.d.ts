@@ -4,5 +4,6 @@ declare global {
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
     };
+    isWebAppReady: boolean;
   }
 }

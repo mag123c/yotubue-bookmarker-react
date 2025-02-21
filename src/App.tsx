@@ -76,6 +76,7 @@ function App() {
       window.removeEventListener("deviceIdReceived", (event) => {
         handleDeviceId(event as MessageEvent);
       });
+      window.isWebAppReady = false;
     };
   }, []);
 
