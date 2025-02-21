@@ -1,10 +1,9 @@
 import { CssBaseline, GlobalStyles } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import CategoriesPage from "./pages/CategoriesPage";
 import CategoryDetailPage from "./pages/CategoryDetailPage";
-import { fetchCategories } from "./services/categoryService";
-import { Category } from "./types/category";
+import { fetchUserInfo } from "./services/userService";
 
 const globalStyles = (
   <GlobalStyles
@@ -37,22 +36,31 @@ const globalStyles = (
 );
 
 function App() {
-  const [_categories, setCategories] = useState<Category[]>([]);
-  const [_selectedCategory, setSelectedCategory] = useState<string>("");
-
   useEffect(() => {
-    const loadCategories = async () => {
+    const handleDeviceIdMessage = async (event: MessageEvent) => {
+      const deviceId = event.data;
+
+      localStorage.setItem("device_id", deviceId);
+
       try {
-        const fetchedCategories = await fetchCategories();
-        setCategories(fetchedCategories);
-        if (fetchedCategories.length > 0) {
-          setSelectedCategory(fetchedCategories[0].name);
+        const user = await fetchUserInfo(deviceId);
+
+        if (user) {
+          localStorage.setItem("links_user", JSON.stringify(user));
+          console.log("✅ 유저 정보 저장 완료:", user);
+        } else {
+          console.warn("🚨 유저 정보 없음");
         }
       } catch (error) {
-        console.error("카테고리 불러오기 실패:", error);
+        console.error("❌ 유저 정보 불러오기 실패:", error);
       }
     };
-    loadCategories();
+
+    window.addEventListener("message", handleDeviceIdMessage);
+
+    return () => {
+      window.removeEventListener("message", handleDeviceIdMessage);
+    };
   }, []);
 
   return (
